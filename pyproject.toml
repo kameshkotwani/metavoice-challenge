@@ -1,0 +1,18 @@
+[project]
+name = "metavoice-challenge"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "apache-airflow>=3.0.0",
+    "boto3>=1.38.3",
+    "fastapi>=0.115.12",
+    "filelock>=3.18.0",
+    "flask-session>=0.8.0",
+    "jupyter>=1.1.1",
+    "openai-whisper>=20240930",
+    "python-dotenv>=1.1.0",
+    "soundfile>=0.13.1",
+    "uvicorn>=0.34.2",
+]
