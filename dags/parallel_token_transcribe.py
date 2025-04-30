@@ -60,15 +60,15 @@ def tokenise(audio_np_array: np.ndarray) -> torch.Tensor:
     return result_tensor
 
 # === DAG ===
-default_args = {"retries": 1, "retry_delay": timedelta(minutes=1)}
+default_args = {"retries": 3, "retry_delay": timedelta(minutes=1)}
 
 with DAG(
     dag_id="parallel_transcribe_tokenise",
     default_args=default_args,
     start_date=datetime(2023, 1, 1),
     catchup=False,
-    max_active_tasks=20,
-    tags=["parallel", "whisper", "tokenise"],
+    max_active_tasks=10,
+    tags=["parallel", "whisper", "tokenise","gpu_pool"],
 ) as dag:
 
     @task()
@@ -100,7 +100,7 @@ with DAG(
         torch.cuda.empty_cache()
         return file_id
 
-    @task()
+    @task(pool="default_pool")
     def merge_outputs(file_id: str):
         transcript_file = TEMP_JSON_DIR / f"{file_id}.json"
         token_file = TOKEN_JSON_DIR / f"{file_id}.json"
