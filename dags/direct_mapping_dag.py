@@ -73,14 +73,20 @@ with DAG(
         print(f"Truncated {truncated} and created {created} .jsonl files.")
         return truncated + created
 
+    @task()
+    def list_transcribed_files():
+        return [
+            f.name.replace(".json", "")
+            for f in TEMP_JSON_DIR.glob("*.json")
+        ]
 
     @task(pool="default_pool")
-    def transcribe_file(file_relative_path: str):
+    def transcribe_file(file_relative_path: str) -> str:
         file_id = Path(file_relative_path).stem
         temp_path = TEMP_JSON_DIR / f"{file_id}.json"
 
         if temp_path.exists():
-            return f"Skipped {file_id} (already transcribed)"
+            return file_relative_path  # return path even if skipped
 
         res = requests.post(TRANSCRIBE_API_URL, json={"file_path": file_relative_path})
         res.raise_for_status()
@@ -92,7 +98,7 @@ with DAG(
                 "transcription": transcription
             }, f)
 
-        return f"Saved {file_id}"
+        return file_relative_path
 
     @task(pool="gpu_pool")
     def tokenise_file(file_relative_path: str):
@@ -141,20 +147,28 @@ with DAG(
 
     # === Direct DAG Execution (no list_audio_files) ===
 
+    # mapping all the file to create tasks
     all_files = [
         str(p.relative_to(AUDIO_ROOT))
         for p in AUDIO_ROOT.rglob("*.flac")
-    ]
+    ]   
 
     prepare = prepare_jsonl_files()
 
-    transcribed = transcribe_file.expand(file_relative_path=all_files)
-    transcribed.set_upstream(prepare)
-    
-    tokenised = tokenise_file.expand(file_relative_path=all_files)
-    tokenised.set_upstream(transcribed)
+    # Expand transcription (same as before)
+    transcriptions = transcribe_file.expand(file_relative_path=all_files)
+    transcriptions.set_upstream(prepare)
+
+    # Now call the task to get XComArg
+    transcribed_ids_list = list_transcribed_files()
+    tokenisations = tokenise_file.expand(file_relative_path=transcribed_ids_list)
+    tokenisations.set_upstream(transcribed_ids_list)
 
     done = mark_tokenisation_complete()
-    done.set_upstream(tokenised)
+    done.set_upstream(tokenisations)
 
     cleanup_intermediate_jsons().set_upstream(done)
+
+
+
+
