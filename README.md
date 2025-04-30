@@ -48,14 +48,15 @@ Each line in the final `.jsonl` looks like:
 ```
 
 # Requirements
-Python 3.9+
-uv (https://docs.astral.sh/uv/)
-Apache Airflow 3.0
-CUDA-enabled GPU
-FastAPI Whisper server running locally at http://localhost:8000/transcribe
 
+- Python 3.9+
+- uv (https://docs.astral.sh/uv/)
+- Apache Airflow 3.0
+- CUDA-enabled GPU
+- FastAPI Whisper server running locally at http://localhost:8000/transcribe
 
-results/
+results
+|
 ├── transcriptions/
 │   └── p225_001.json     # Contains transcription only
 ├── tokens/
@@ -64,13 +65,16 @@ results/
 
 
 # Run Instructions
-Start your FastAPI server (for Whisper).
 
-Start your Airflow webserver and scheduler.
+- install dependencies using uv ( uv sync)
 
-Trigger the parallel_transcribe_tokenise DAG from the UI.
+- Start your FastAPI server (for Whisper).
 
-Notes
+- Start your Airflow webserver and scheduler. (airflow standalone)
+
+- Trigger the parallel_transcribe_tokenise DAG from the UI.
+
+## Notes
 
 The mock tokenisation simulates GPU workload using tensor operations and artificial delay.
 
@@ -79,8 +83,13 @@ Output merging is safe with per-file locking.
 .jsonl files are reset for every new run.
 
 results/
+
+
 ├── transcriptions/
 │   └── p225_001.json     # Contains transcription only
+
 ├── tokens/
+
 │   └── p225_001.json     # Contains token_array only
+
 ├── p225.jsonl            # Combined results
